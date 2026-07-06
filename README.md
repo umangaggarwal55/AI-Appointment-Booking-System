@@ -153,7 +153,7 @@ Google Sheets
 
 ## Booking Log
 
-![Booking Log](docs/booking-log-sample.png)
+![Booking Log](docs/booking-log-samplev2.png)
 
 ---
 
