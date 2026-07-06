@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Book a Meeting</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: #f4f6fb;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem 1rem;
+    }
+    .container {
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 4px 32px rgba(24,95,165,0.10);
+      padding: 2.5rem 2rem;
+      width: 100%;
+      max-width: 500px;
+    }
+    .header { display: flex; align-items: center; gap: 12px; margin-bottom: 2rem; }
+    .header-icon {
+      width: 48px; height: 48px; background: #185FA5;
+      border-radius: 12px; display: flex; align-items: center;
+      justify-content: center; font-size: 24px;
+    }
+    .header h1 { font-size: 20px; font-weight: 600; color: #1a1a2e; }
+    .header p { font-size: 13px; color: #6b7280; margin-top: 2px; }
+    .section-label {
+      font-size: 11px; font-weight: 600; letter-spacing: 0.08em;
+      text-transform: uppercase; color: #9ca3af; margin-bottom: 12px;
+    }
+    .divider { height: 1px; background: #f0f0f0; margin: 1.5rem 0; }
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+    .row.full { grid-template-columns: 1fr; }
+    .field { display: flex; flex-direction: column; gap: 5px; }
+    label { font-size: 13px; font-weight: 500; color: #374151; }
+    input, textarea {
+      font-size: 14px; padding: 10px 13px;
+      border: 1.5px solid #e5e7eb; border-radius: 8px;
+      background: #fafafa; color: #1a1a2e; outline: none;
+      font-family: inherit; transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    input:focus, textarea:focus {
+      border-color: #185FA5; background: #fff;
+      box-shadow: 0 0 0 3px rgba(24,95,165,0.10);
+    }
+    textarea { resize: vertical; min-height: 70px; line-height: 1.5; }
+    .submit-btn {
+      width: 100%; padding: 13px; background: #185FA5; color: #fff;
+      border: none; border-radius: 9px; font-size: 15px; font-weight: 600;
+      cursor: pointer; margin-top: 1.5rem; font-family: inherit;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      transition: background 0.15s, transform 0.1s;
+    }
+    .submit-btn:hover { background: #0C447C; }
+    .submit-btn:active { transform: scale(0.98); }
+    .submit-btn:disabled { background: #93c5fd; cursor: not-allowed; }
+    .status {
+      margin-top: 1rem; padding: 13px 15px;
+      border-radius: 9px; font-size: 14px; line-height: 1.6; display: none;
+    }
+    .status.success { display:block; background:#f0fdf4; color:#166534; border:1px solid #bbf7d0; }
+    .status.error   { display:block; background:#fef2f2; color:#991b1b; border:1px solid #fecaca; }
+    .status.sending { display:block; background:#eff6ff; color:#1e40af; border:1px solid #bfdbfe; }
+    .footer-note { margin-top:1.5rem; font-size:12px; color:#9ca3af; text-align:center; }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <div class="header">
+    <div class="header-icon">📅</div>
+    <div>
+      <h1>Book a Meeting</h1>
+      <p>Fill in your details — we'll confirm via email</p>
+    </div>
+  </div>
+
+  <p class="section-label">Your information</p>
+  <div class="row">
+    <div class="field">
+      <label for="name">Full name *</label>
+      <input type="text" id="name" placeholder="Rahul Sharma"/>
+    </div>
+    <div class="field">
+      <label for="email">Email address *</label>
+      <input type="email" id="email" placeholder="rahul@gmail.com"/>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <p class="section-label">Meeting details</p>
+  <div class="row full">
+    <div class="field">
+      <label for="meeting_title">Meeting title *</label>
+      <input type="text" id="meeting_title" placeholder="AI Consultation / Sales Call / Follow-up"/>
+    </div>
+  </div>
+  <div class="row">
+    <div class="field">
+      <label for="date">Date *</label>
+      <input type="date" id="date"/>
+    </div>
+    <div class="field">
+      <label for="time">Time *</label>
+      <input type="time" id="time"/>
+    </div>
+  </div>
+  <div class="row full">
+    <div class="field">
+      <label for="notes">Notes (optional)</label>
+      <textarea id="notes" placeholder="Any agenda or context..."></textarea>
+    </div>
+  </div>
+
+  <button class="submit-btn" id="submitBtn" onclick="submitBooking()">
+    📨 Book Appointment
+  </button>
+
+  <div class="status" id="statusBox"></div>
+  <p class="footer-note">Your information is used only to schedule your meeting.</p>
+
+</div>
+
+<script>
+  // ✅ NO webhook URL here — it's safely on the Python server
+  function setDefaults() {
+    const now = new Date();
+    const pad = n => String(n).padStart(2,'0');
+    document.getElementById('date').value =
+      now.getFullYear()+'-'+pad(now.getMonth()+1)+'-'+pad(now.getDate());
+    document.getElementById('time').value = pad(Math.min(now.getHours()+1,23))+':00';
+  }
+  setDefaults();
+
+  async function submitBooking() {
+    const status = document.getElementById('statusBox');
+    const btn    = document.getElementById('submitBtn');
+
+    status.className = 'status';
+    status.textContent = '';
+
+    const name          = document.getElementById('name').value.trim();
+    const email         = document.getElementById('email').value.trim();
+    const meeting_title = document.getElementById('meeting_title').value.trim();
+    const date          = document.getElementById('date').value;
+    const time          = document.getElementById('time').value;
+    const notes         = document.getElementById('notes').value.trim();
+
+    if (!name || !email || !meeting_title || !date || !time) {
+      status.className = 'status error';
+      status.textContent = '❌ Please fill in all required fields.';
+      return;
+    }
+
+    status.className = 'status sending';
+    status.textContent = '⏳ Sending your booking...';
+    btn.disabled = true;
+    btn.textContent = '⏳ Sending...';
+
+    try {
+      // Talks to Flask backend — NOT Make.com directly
+      const res = await fetch('/book', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, meeting_title, date, time, notes })
+      });
+
+      const result = await res.json();
+
+      if (result.success) {
+        status.className = 'status success';
+        status.innerHTML = `
+          ✅ <strong>Booking confirmed!</strong><br><br>
+          📅 <strong>${meeting_title}</strong> on <strong>${date}</strong> at <strong>${time}</strong><br>
+          📧 Confirmation email will be sent to <strong>${email}</strong>
+        `;
+        btn.textContent = '✅ Booked!';
+      } else {
+        throw new Error(result.message);
+      }
+
+    } catch (err) {
+      status.className = 'status error';
+      status.innerHTML = `❌ <strong>Failed:</strong> ${err.message}`;
+      btn.disabled = false;
+      btn.textContent = '📨 Book Appointment';
+    }
+  }
+</script>
+</body>
+</html>
